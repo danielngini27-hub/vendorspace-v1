@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+/* Floating Wireframe Cubes Animation */
+@keyframes float-cube {
+  0% {
+    transform: translateY(0px) rotateX(0deg) rotateY(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotateX(10deg) rotateY(10deg);
+  }
+  100% {
+    transform: translateY(0px) rotateX(0deg) rotateY(0deg);
+  }
+}
+
+@keyframes float-cube-reverse {
+  0% {
+    transform: translateY(0px) rotateX(0deg) rotateY(0deg);
+  }
+  50% {
+    transform: translateY(20px) rotateX(-10deg) rotateY(-10deg);
+  }
+  100% {
+    transform: translateY(0px) rotateX(0deg) rotateY(0deg);
+  }
+}
+
+.animate-float-1 {
+  animation: float-cube 6s ease-in-out infinite;
+}
+.animate-float-2 {
+  animation: float-cube-reverse 8s ease-in-out infinite;
+}
+.animate-float-3 {
+  animation: float-cube 7s ease-in-out infinite 1s;
+}
