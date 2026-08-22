@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "VendorSpace",
-  description: "Stop getting ghosted. Get paid instantly.",
+  title: "Vendly",
+  description:
+    "The secure payment platform for modern vendors. Stop getting ghosted, get paid instantly.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

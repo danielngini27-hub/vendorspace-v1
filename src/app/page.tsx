@@ -74,7 +74,7 @@ export default function Home() {
             <span className="text-3xl font-bold text-white">V</span>
           </div>
           <CardTitle className="text-3xl font-bold text-center bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-400 bg-clip-text text-transparent">
-            VendorSpace
+            Vendly
           </CardTitle>
           <CardDescription className="text-zinc-300 text-center text-base">
             Stop getting ghosted. Get paid instantly.
