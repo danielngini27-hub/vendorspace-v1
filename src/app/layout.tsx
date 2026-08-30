@@ -1,30 +1,25 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import BottomNav from "@/components/BottomNav";
+import SplashScreen from "@/components/SplashScreen";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-export const metadata = {
-  title: "Vendly",
-  description:
-    "The secure payment platform for modern vendors. Stop getting ghosted, get paid instantly.",
+export const metadata: Metadata = {
+  title: "Vendly - Buy & Sell with Trust",
+  description: "Secure escrow marketplace. Verified vendors. No scams.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
+    <html lang="en">
+      <body className="antialiased">
+        <SplashScreen />
+        <main className="pb-20">{children}</main>
+        <BottomNav />
+      </body>
     </html>
   );
 }
