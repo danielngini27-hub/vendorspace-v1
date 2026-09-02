@@ -4,6 +4,10 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Spinner from "@/components/ui/Spinner";
+import StatusBadge from "@/components/ui/StatusBadge";
+
+const STEPS = ["pending", "paid", "shipped", "delivered"];
 
 export default function TransactionPage() {
   const [transaction, setTransaction] = useState<any>(null);
@@ -28,7 +32,6 @@ export default function TransactionPage() {
       setUser(user);
 
       if (transactionId) {
-        // Fetch transaction
         const { data: txData } = await supabase
           .from("escrow_transactions")
           .select("*")
@@ -37,8 +40,6 @@ export default function TransactionPage() {
 
         if (txData) {
           setTransaction(txData);
-
-          // Fetch related listing details
           const { data: listingData } = await supabase
             .from("listings")
             .select("*")
@@ -56,7 +57,6 @@ export default function TransactionPage() {
   const updateStatus = async (newStatus: string) => {
     if (!transaction) return;
     setUpdating(true);
-
     const { error } = await supabase
       .from("escrow_transactions")
       .update({ status: newStatus })
@@ -72,127 +72,162 @@ export default function TransactionPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">
-        Loading transaction...
+      <div className="flex min-h-screen items-center justify-center bg-[var(--v-canvas)]">
+        <Spinner />
       </div>
     );
   }
 
   if (!transaction || !listing) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">
-        Transaction not found.
+      <div className="flex min-h-screen items-center justify-center bg-[var(--v-canvas)]">
+        <p className="text-[var(--v-text-muted)]">Transaction not found.</p>
       </div>
     );
   }
 
-  // Determine if user is buyer or seller
   const isBuyer = user.id === transaction.buyer_id;
   const isSeller = user.id === transaction.seller_id;
-
-  // Status Colors
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "pending":
-        return "bg-yellow-500/20 text-yellow-400 border-yellow-500/50";
-      case "paid":
-        return "bg-blue-500/20 text-blue-400 border-blue-500/50";
-      case "shipped":
-        return "bg-purple-500/20 text-purple-400 border-purple-500/50";
-      case "delivered":
-        return "bg-green-500/20 text-green-400 border-green-500/50";
-      case "disputed":
-        return "bg-red-500/20 text-red-400 border-red-500/50";
-      default:
-        return "bg-slate-500/20 text-slate-400";
-    }
-  };
+  const currentStepIndex = STEPS.indexOf(transaction.status);
+  const date = new Date(transaction.created_at).toLocaleDateString(undefined, {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black p-4 md:p-8">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-[var(--v-canvas)] pb-28">
+      <div className="mx-auto max-w-lg px-5">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="v-rise flex items-center justify-between pt-12 pb-6">
           <Link
-            href="/marketplace"
-            className="text-slate-400 hover:text-white flex items-center gap-2"
+            href="/orders"
+            className="v-press flex items-center gap-2 text-sm text-[var(--v-text-muted)] hover:text-white"
           >
-            ← Back to Marketplace
+            ← Orders
           </Link>
-          <span
-            className={`px-4 py-1 rounded-full border text-sm font-bold uppercase tracking-wider ${getStatusColor(transaction.status)}`}
-          >
-            {transaction.status}
-          </span>
+          <StatusBadge status={transaction.status} />
         </div>
 
         {/* Main Card */}
-        <div className="bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 mb-6">
-          <h1 className="text-3xl font-bold text-white mb-2">
-            Escrow Transaction
-          </h1>
-          <p className="text-slate-400 mb-8 text-sm">
-            ID: {transaction.id.slice(0, 8)}...
-          </p>
+        <div className="v-rise v-rise-1">
+          <div className="v-glass-edge v-shadow rounded-[var(--v-radius-card)] border border-[var(--v-border-strong)] bg-[var(--v-surface-1)] p-6">
+            <h1 className="mb-1 text-2xl font-bold text-white">
+              Escrow Transaction
+            </h1>
+            <p className="mb-6 text-xs text-[var(--v-text-dim)]">
+              ID: {transaction.id.slice(0, 8)}… · {date}
+            </p>
 
-          {/* Progress Bar */}
-          <div className="flex items-center justify-between mb-10 relative">
-            <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-800 -z-10 transform -translate-y-1/2"></div>
-            {["pending", "paid", "shipped", "delivered"].map((step, index) => {
-              const steps = ["pending", "paid", "shipped", "delivered"];
-              const currentStepIndex = steps.indexOf(transaction.status);
-              const isActive = index <= currentStepIndex;
+            {/* Timeline */}
+            <div className="mb-8">
+              <div className="relative">
+                <div className="absolute left-4 top-4 h-[calc(100%-2rem)] w-0.5 bg-[var(--v-border)]" />
+                <div className="space-y-4">
+                  {STEPS.map((step, index) => {
+                    const isCompleted = index < currentStepIndex;
+                    const isCurrent = index === currentStepIndex;
+                    const isFuture = index > currentStepIndex;
 
-              return (
-                <div key={step} className="flex flex-col items-center">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm transition-all ${isActive ? "bg-blue-500 text-white" : "bg-slate-800 text-slate-500"}`}
-                  >
-                    {index + 1}
-                  </div>
-                  <span
-                    className={`text-xs mt-2 capitalize ${isActive ? "text-white" : "text-slate-500"}`}
-                  >
-                    {step}
-                  </span>
+                    return (
+                      <div
+                        key={step}
+                        className="relative flex items-start gap-4"
+                      >
+                        <div
+                          className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-all ${
+                            isCompleted
+                              ? "border-[var(--v-accent)] bg-[var(--v-accent)] text-white"
+                              : isCurrent
+                                ? "border-[var(--v-accent)] bg-[var(--v-surface-1)] text-[var(--v-accent)]"
+                                : "border-[var(--v-border)] bg-[var(--v-surface-1)] text-[var(--v-text-dim)]"
+                          }`}
+                        >
+                          {isCompleted ? "✓" : index + 1}
+                        </div>
+                        <div className="flex-1 pt-1">
+                          <p
+                            className={`text-sm font-semibold capitalize ${
+                              isCompleted || isCurrent
+                                ? "text-white"
+                                : "text-[var(--v-text-dim)]"
+                            }`}
+                          >
+                            {step}
+                          </p>
+                          <p className="text-[11px] text-[var(--v-text-muted)]">
+                            {step === "pending" &&
+                              "Awaiting payment confirmation"}
+                            {step === "paid" &&
+                              isSeller &&
+                              "Seller: mark as shipped to proceed"}
+                            {step === "paid" &&
+                              isBuyer &&
+                              "Seller has been notified to ship"}
+                            {step === "shipped" &&
+                              isBuyer &&
+                              "Confirm delivery to release funds"}
+                            {step === "shipped" &&
+                              isSeller &&
+                              "Buyer will confirm receipt"}
+                            {step === "delivered" && "Funds released to seller"}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </div>
+              </div>
+            </div>
 
-          {/* Details Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="bg-slate-800/50 p-4 rounded-xl">
-              <p className="text-slate-400 text-xs mb-1">Item</p>
-              <p className="text-white font-bold text-lg">{listing.title}</p>
-            </div>
-            <div className="bg-slate-800/50 p-4 rounded-xl">
-              <p className="text-slate-400 text-xs mb-1">Amount Held</p>
-              <p className="text-cyan-400 font-bold text-2xl">
-                ₦{listing.price.toLocaleString()}
-              </p>
-            </div>
-            <div className="bg-slate-800/50 p-4 rounded-xl">
-              <p className="text-slate-400 text-xs mb-1">Seller</p>
-              <p className="text-white font-medium">{listing.business_name}</p>
-            </div>
-            <div className="bg-slate-800/50 p-4 rounded-xl">
-              <p className="text-slate-400 text-xs mb-1">Buyer</p>
-              <p className="text-white font-medium">
-                {isBuyer ? "You" : "Verified Buyer"}
-              </p>
-            </div>
-          </div>
+            {/* Product + Details */}
+            {listing.image_url && (
+              <img
+                src={listing.image_url}
+                alt={listing.title}
+                className="mb-4 h-40 w-full rounded-2xl object-cover"
+              />
+            )}
 
-          {/* Action Buttons */}
-          <div className="border-t border-slate-800 pt-6">
-            <h3 className="text-white font-bold mb-4">Actions</h3>
+            <div className="v-surface-2 mb-6 space-y-3 rounded-2xl p-4">
+              <div className="flex justify-between">
+                <span className="text-sm text-[var(--v-text-muted)]">Item</span>
+                <span className="text-right text-sm font-medium text-white">
+                  {listing.title}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-[var(--v-text-muted)]">
+                  Amount Held
+                </span>
+                <span className="v-num text-lg font-bold text-[var(--v-accent)]">
+                  ₦{listing.price.toLocaleString()}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-[var(--v-text-muted)]">
+                  Seller
+                </span>
+                <span className="text-sm font-medium text-white">
+                  {listing.business_name}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-[var(--v-text-muted)]">
+                  Buyer
+                </span>
+                <span className="text-sm font-medium text-white">
+                  {isBuyer ? "You" : "Verified Buyer"}
+                </span>
+              </div>
+            </div>
 
+            {/* Actions */}
             {transaction.status === "paid" && isSeller && (
               <button
                 onClick={() => updateStatus("shipped")}
                 disabled={updating}
-                className="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl transition-all disabled:opacity-50"
+                className="v-press w-full rounded-xl bg-gradient-to-r from-violet-500 to-purple-600 py-3.5 font-bold text-white shadow-lg shadow-violet-500/30 disabled:opacity-50"
               >
                 {updating ? "Updating..." : "📦 Mark as Shipped"}
               </button>
@@ -203,7 +238,7 @@ export default function TransactionPage() {
                 <button
                   onClick={() => updateStatus("delivered")}
                   disabled={updating}
-                  className="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl transition-all disabled:opacity-50"
+                  className="v-press w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 py-3.5 font-bold text-white shadow-lg shadow-emerald-500/30 disabled:opacity-50"
                 >
                   {updating
                     ? "Updating..."
@@ -211,7 +246,8 @@ export default function TransactionPage() {
                 </button>
                 <button
                   onClick={() => updateStatus("disputed")}
-                  className="w-full py-3 bg-red-900/50 hover:bg-red-900 text-red-400 font-medium rounded-xl transition-all border border-red-900"
+                  disabled={updating}
+                  className="v-press w-full rounded-xl border border-rose-500/25 bg-rose-500/[0.08] py-3 font-medium text-rose-300 transition-colors hover:bg-rose-500/15 disabled:opacity-50"
                 >
                   ⚠️ Report an Issue (Dispute)
                 </button>
@@ -219,16 +255,16 @@ export default function TransactionPage() {
             )}
 
             {transaction.status === "delivered" && (
-              <div className="text-center py-4 bg-green-500/10 border border-green-500/30 rounded-xl">
-                <p className="text-green-400 font-bold">
-                  Transaction Completed! Funds released to seller.
+              <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.08] p-4 text-center">
+                <p className="font-bold text-emerald-300">
+                  ✅ Transaction Completed! Funds released to seller.
                 </p>
               </div>
             )}
 
             {transaction.status === "pending" && (
-              <p className="text-slate-400 text-center py-4">
-                Waiting for payment confirmation...
+              <p className="py-4 text-center text-sm text-[var(--v-text-muted)]">
+                Waiting for payment confirmation…
               </p>
             )}
           </div>

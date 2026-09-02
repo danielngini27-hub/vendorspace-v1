@@ -3,72 +3,55 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const items = [
-  { href: "/dashboard", label: "Home", icon: "🏡" },
-  { href: "/marketplace", label: "Market", icon: "🛍️" },
-  { href: "/orders", label: "Orders", icon: "📦" },
-  { href: "/profile", label: "Profile", icon: "👤" },
-];
-
-function NavItem({
-  href,
-  label,
-  icon,
-}: {
-  href: string;
-  label: string;
-  icon: string;
-}) {
-  const pathname = usePathname();
-  const active =
-    pathname === href || (href === "/dashboard" && pathname === "/");
-
-  return (
-    <Link
-      href={href}
-      className="v-press flex flex-1 flex-col items-center gap-1 py-2"
-    >
-      <span
-        className={`text-xl transition-all duration-200 ${active ? "scale-110" : "opacity-50"}`}
-      >
-        {icon}
-      </span>
-      <span
-        className={`text-[10px] font-medium transition-colors ${active ? "text-[var(--v-accent)]" : "text-[var(--v-text-dim)]"}`}
-      >
-        {label}
-      </span>
-      <span
-        className={`h-1 w-1 rounded-full transition-colors ${active ? "bg-[var(--v-accent)]" : "bg-transparent"}`}
-      />
-    </Link>
-  );
-}
-
 export default function BottomNav() {
+  const pathname = usePathname();
+
+  // Hide the navigation bar on the public landing page
+  if (pathname === "/") return null;
+
+  const links = [
+    { href: "/dashboard", label: "Home", icon: "🏠" },
+    { href: "/marketplace", label: "Market", icon: "🛍️" },
+    { href: "/listings", label: "Sell", icon: "➕", isFab: true },
+    { href: "/orders", label: "Orders", icon: "📦" },
+    { href: "/profile", label: "Profile", icon: "👤" },
+  ];
+
   return (
-    <nav className="fixed bottom-0 left-1/2 z-50 w-full max-w-lg -translate-x-1/2 border-t border-[var(--v-border)] bg-[#0a0f1c]/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
-      <div className="flex items-end px-2">
-        <NavItem {...items[0]} />
-        <NavItem {...items[1]} />
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--v-border)] bg-[var(--v-surface-1)]/90 backdrop-blur-xl pb-safe">
+      <div className="mx-auto flex max-w-lg items-center justify-around px-2 py-2">
+        {links.map((link) => {
+          const isActive =
+            pathname === link.href ||
+            (link.href !== "/dashboard" && pathname.startsWith(link.href));
 
-        {/* Center FAB — Sell */}
-        <Link
-          href="/listings"
-          aria-label="Sell an item"
-          className="v-press flex flex-1 flex-col items-center gap-1 py-2"
-        >
-          <span className="-mt-6 flex h-13 w-13 items-center justify-center rounded-full bg-gradient-to-br from-sky-400 to-blue-600 p-4 text-xl font-bold text-white shadow-lg shadow-blue-500/40 ring-4 ring-[#0a0f1c]">
-            +
-          </span>
-          <span className="text-[10px] font-medium text-[var(--v-text-dim)]">
-            Sell
-          </span>
-          <span className="h-1 w-1 rounded-full bg-transparent" />
-        </Link>
+          if (link.isFab) {
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="v-press relative -top-4 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-sky-400 to-blue-600 text-2xl text-white shadow-lg shadow-blue-500/40"
+              >
+                {link.icon}
+              </Link>
+            );
+          }
 
-        <NavItem {...items[2]} />
-        <NavItem {...items[3]} />
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`v-press flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 transition-colors ${
+                isActive
+                  ? "text-[var(--v-accent)]"
+                  : "text-[var(--v-text-muted)] hover:text-white"
+              }`}
+            >
+              <span className="text-lg">{link.icon}</span>
+              <span className="text-[10px] font-medium">{link.label}</span>
+            </Link>
+          );
+        })}
       </div>
     </nav>
   );

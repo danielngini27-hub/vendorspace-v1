@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
+import Spinner from "@/components/ui/Spinner";
 
 export default function SignupPage() {
   const [businessName, setBusinessName] = useState("");
@@ -38,44 +39,34 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-black flex items-center justify-center p-4">
-      {/* Background glow */}
-      <div
-        style={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: "600px",
-          height: "600px",
-          background: "rgba(59, 130, 246, 0.1)",
-          borderRadius: "50%",
-          filter: "blur(96px)",
-          zIndex: 0,
-        }}
-      />
+    <div className="flex min-h-screen items-center justify-center bg-[var(--v-canvas)] p-4">
+      {/* Restrained glow */}
+      <div className="pointer-events-none absolute left-1/2 top-1/2 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-500/[0.08] blur-[100px]" />
 
-      <div className="relative z-10 w-full max-w-md bg-slate-900/80 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-8 shadow-2xl">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-xl mb-4">
-            <span className="text-3xl font-bold text-white">V</span>
+      <div className="v-rise v-glass-edge v-shadow relative z-10 w-full max-w-md rounded-[var(--v-radius-card)] border border-[var(--v-border-strong)] bg-[var(--v-surface-1)] p-8">
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <div className="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-400 to-blue-600 shadow-lg shadow-blue-500/30">
+            <span className="text-3xl font-black text-white">V</span>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
-          <p className="text-slate-400">
+          <h1 className="mb-2 text-2xl font-bold text-white">Create Account</h1>
+          <p className="text-sm text-[var(--v-text-muted)]">
             Join Vendly and start selling securely
           </p>
         </div>
 
+        {/* Error */}
         {error && (
-          <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-400 text-sm">
+          <div className="v-rise mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-300">
             {error}
           </div>
         )}
 
+        {/* Form */}
         <form onSubmit={handleSignup} className="space-y-5">
           {/* Business Name */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="mb-2 block text-sm font-medium text-[var(--v-text-muted)]">
               Business Name
             </label>
             <input
@@ -83,13 +74,13 @@ export default function SignupPage() {
               value={businessName}
               onChange={(e) => setBusinessName(e.target.value)}
               placeholder="e.g. Dani's Watches"
-              className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="v-surface w-full rounded-xl px-4 py-3 text-white placeholder-[var(--v-text-dim)] transition-colors focus:border-[var(--v-accent)] focus:outline-none"
             />
           </div>
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="mb-2 block text-sm font-medium text-[var(--v-text-muted)]">
               Email Address
             </label>
             <input
@@ -98,13 +89,13 @@ export default function SignupPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
-              className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="v-surface w-full rounded-xl px-4 py-3 text-white placeholder-[var(--v-text-dim)] transition-colors focus:border-[var(--v-accent)] focus:outline-none"
             />
           </div>
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-slate-300 mb-2">
+            <label className="mb-2 block text-sm font-medium text-[var(--v-text-muted)]">
               Password
             </label>
             <input
@@ -113,24 +104,25 @@ export default function SignupPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Create a strong password"
               required
-              className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="v-surface w-full rounded-xl px-4 py-3 text-white placeholder-[var(--v-text-dim)] transition-colors focus:border-[var(--v-accent)] focus:outline-none"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-semibold rounded-lg transition-all disabled:opacity-50"
+            className="v-press w-full rounded-xl bg-gradient-to-r from-sky-400 to-blue-600 py-3 font-semibold text-white shadow-lg shadow-blue-500/30 transition-all disabled:opacity-50"
           >
             {loading ? "Creating account..." : "Sign Up"}
           </button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-slate-400">
+        {/* Footer */}
+        <p className="mt-6 text-center text-sm text-[var(--v-text-muted)]">
           Already have an account?{" "}
           <Link
             href="/login"
-            className="text-blue-400 hover:text-blue-300 font-medium"
+            className="font-medium text-[var(--v-accent)] transition-colors hover:text-sky-300"
           >
             Log In
           </Link>
