@@ -183,7 +183,7 @@ export default function LandingPage() {
             />
             <StepCard
               n="2"
-              icon="📦"
+              icon=""
               title="Seller delivers"
               text="The seller ships or hands over the item, knowing payment is guaranteed."
             />
