@@ -1,17 +1,25 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showToast, setShowToast] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     checkUser();
+
+    // If they just came from verification, show a success toast
+    if (searchParams.get("verified") === "true") {
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 4000);
+    }
   }, []);
 
   async function checkUser() {
@@ -29,25 +37,47 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-        <div className="text-white text-xl">Loading...</div>
+        <div className="text-white text-xl">Loading dashboard...</div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+      {/* Smooth Toast Notification */}
+      {showToast && (
+        <div className="fixed top-6 right-6 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 z-50">
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M5 13l4 4L19 7"
+            />
+          </svg>
+          <span className="font-bold">Identity Verified Successfully!</span>
+        </div>
+      )}
+
       {/* Header */}
       <nav className="bg-white/10 backdrop-blur-md border-b border-white/20">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-white">Vendly</h1>
           <div className="flex items-center gap-4">
-            <span className="text-blue-200 text-sm">{user?.email}</span>
+            <span className="text-blue-200 text-sm hidden sm:inline">
+              {user?.email}
+            </span>
             <button
               onClick={async () => {
                 await supabase.auth.signOut();
                 router.push("/");
               }}
-              className="text-red-400 hover:text-red-300 text-sm"
+              className="text-red-400 hover:text-red-300 text-sm font-medium"
             >
               Sign Out
             </button>
@@ -57,7 +87,6 @@ export default function DashboardPage() {
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 py-12">
-        {/* Welcome Section */}
         <div className="mb-12">
           <h2 className="text-4xl font-bold text-white mb-2">
             Welcome back! 👋
@@ -69,43 +98,52 @@ export default function DashboardPage() {
 
         {/* Quick Actions */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-all">
+          <Link
+            href="/marketplace"
+            className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-all group"
+          >
             <div className="text-3xl mb-3">🛒</div>
-            <h3 className="text-xl font-semibold text-white mb-2">
+            <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-blue-400 transition-colors">
               Start Buying
             </h3>
             <p className="text-blue-200 text-sm mb-4">
               Browse verified sellers
             </p>
-            <button className="text-blue-400 hover:text-blue-300 text-sm font-medium">
+            <span className="text-blue-400 text-sm font-medium">
               Browse Marketplace →
-            </button>
-          </div>
+            </span>
+          </Link>
 
-          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-all">
+          <Link
+            href="/create-listing"
+            className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-all group"
+          >
             <div className="text-3xl mb-3">📦</div>
-            <h3 className="text-xl font-semibold text-white mb-2">
+            <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-blue-400 transition-colors">
               Start Selling
             </h3>
             <p className="text-blue-200 text-sm mb-4">List your products</p>
-            <button className="text-blue-400 hover:text-blue-300 text-sm font-medium">
+            <span className="text-blue-400 text-sm font-medium">
               Create Listing →
-            </button>
-          </div>
+            </span>
+          </Link>
 
-          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-all">
+          <Link
+            href="/transactions"
+            className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-all group"
+          >
             <div className="text-3xl mb-3">📊</div>
-            <h3 className="text-xl font-semibold text-white mb-2">
+            <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-blue-400 transition-colors">
               Transactions
             </h3>
             <p className="text-blue-200 text-sm mb-4">View your history</p>
-            <button className="text-blue-400 hover:text-blue-300 text-sm font-medium">
+            <span className="text-blue-400 text-sm font-medium">
               View All →
-            </button>
-          </div>
+            </span>
+          </Link>
         </div>
 
-        {/* BVN Verification Card */}
+        {/* Verification Card */}
         <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 border border-white/20">
           <div className="flex items-center justify-between">
             <div>
@@ -122,20 +160,6 @@ export default function DashboardPage() {
             >
               Verify Now
             </button>
-          </div>
-        </div>
-
-        {/* Security Badge */}
-        <div className="mt-8 text-center">
-          <div className="inline-flex items-center gap-2 text-blue-300 text-sm">
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <span>Protected by Vendly Escrow</span>
           </div>
         </div>
       </div>
