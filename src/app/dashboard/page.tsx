@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
@@ -10,15 +10,17 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [showToast, setShowToast] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
     checkUser();
 
-    // If they just came from verification, show a success toast
-    if (searchParams.get("verified") === "true") {
+    // Check URL params for verification success
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("verified") === "true") {
       setShowToast(true);
       setTimeout(() => setShowToast(false), 4000);
+      // Clean up URL
+      window.history.replaceState({}, "", "/dashboard");
     }
   }, []);
 
