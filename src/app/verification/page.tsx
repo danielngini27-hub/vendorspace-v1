@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
 export default function VerificationPage() {
@@ -21,21 +22,48 @@ export default function VerificationPage() {
 
     setLoading(true);
 
-    // Simulate saving to database
-    setTimeout(() => {
-      setLoading(false);
-      setShowSuccess(true); // Show the smooth green toast
+    try {
+      // Get current user
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-      // Redirect to dashboard after 2 seconds
+      if (!user) {
+        alert("No user found. Please log in.");
+        setLoading(false);
+        return;
+      }
+
+      // Save verification to Supabase User Metadata
+      const { error } = await supabase.auth.updateUser({
+        data: {
+          is_verified: true,
+          verification_type: idType,
+          verified_at: new Date().toISOString(),
+          [idType]: idNumber,
+        },
+      });
+
+      if (error) throw error;
+
+      // Show success toast
+      setShowSuccess(true);
+
+      // Redirect after 2 seconds
       setTimeout(() => {
-        router.push("/dashboard?verified=true");
+        router.push("/dashboard");
       }, 2000);
-    }, 1500);
+    } catch (error) {
+      console.error("Verification error:", error);
+      alert("Verification failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 py-12 px-4">
-      {/* Smooth Success Toast (Replaces the ugly popup) */}
+      {/* Smooth Success Toast */}
       {showSuccess && (
         <div className="fixed top-6 right-6 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 z-50 animate-bounce">
           <svg
@@ -52,7 +80,7 @@ export default function VerificationPage() {
             />
           </svg>
           <span className="font-bold">
-            Verification submitted successfully!
+            ✅ Verification submitted successfully!
           </span>
         </div>
       )}
@@ -108,7 +136,7 @@ export default function VerificationPage() {
             </div>
             <p className="text-blue-300 text-xs mt-2">
               {idType === "nin"
-                ? "⚠️ NIN accounts limited to ₦50,000 per transaction"
+                ? "⚠️ NIN accounts limited to ₦50,000"
                 : "✅ BVN allows unlimited transactions"}
             </p>
           </div>
@@ -122,7 +150,7 @@ export default function VerificationPage() {
               type="text"
               value={idNumber}
               onChange={(e) => setIdNumber(e.target.value.replace(/\D/g, ""))}
-              placeholder={idType === "bvn" ? "11-digit BVN" : "11-digit NIN"}
+              placeholder="11-digit number"
               maxLength={11}
               className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/20 text-white placeholder-blue-300 focus:outline-none focus:border-blue-500"
               required
@@ -136,11 +164,10 @@ export default function VerificationPage() {
                 type="checkbox"
                 checked={ageConfirmed}
                 onChange={(e) => setAgeConfirmed(e.target.checked)}
-                className="mt-1 w-4 h-4 rounded border-white/20 bg-white/5 text-blue-500 focus:ring-blue-500"
+                className="mt-1 w-4 h-4 rounded border-white/20 bg-white/5 text-blue-500"
               />
               <span className="text-blue-200 text-sm">
-                I confirm that I am 18 years or older and agree to the Terms of
-                Service
+                I confirm I am 18+ years old
               </span>
             </label>
           </div>
@@ -149,15 +176,11 @@ export default function VerificationPage() {
           <button
             type="submit"
             disabled={loading || !ageConfirmed}
-            className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-cyan-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-cyan-600 transition-all disabled:opacity-50"
           >
-            {loading ? "Submitting..." : "Submit Verification"}
+            {loading ? "Verifying..." : "Submit Verification"}
           </button>
         </form>
-
-        <div className="mt-6 text-center text-blue-300 text-sm">
-          <p>🔒 Your information is encrypted and secure</p>
-        </div>
       </div>
     </div>
   );
