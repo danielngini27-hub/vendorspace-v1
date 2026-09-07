@@ -11,61 +11,59 @@ export default function VerificationPage() {
   const [ageConfirmed, setAgeConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
+
     if (!ageConfirmed) {
-      alert("Please confirm you are 18 or older");
+      setError("Please confirm you are 18 or older.");
       return;
     }
 
     setLoading(true);
 
     try {
-      // Get current user
+      // 1. Get current user
       const {
         data: { user },
+        error: userError,
       } = await supabase.auth.getUser();
+      if (userError || !user) throw new Error("User not authenticated.");
 
-      if (!user) {
-        alert("No user found. Please log in.");
-        setLoading(false);
-        return;
-      }
-
-      // Save verification to Supabase User Metadata
-      const { error } = await supabase.auth.updateUser({
-        data: {
-          is_verified: true,
-          verification_type: idType,
-          verified_at: new Date().toISOString(),
-          [idType]: idNumber,
+      // 2. Insert into the new secure 'verifications' table
+      const { error: dbError } = await supabase.from("verifications").upsert(
+        {
+          user_id: user.id,
+          id_type: idType,
+          id_number: idNumber,
+          status: "pending", // In a real app, an admin or API would change this to 'verified'
         },
-      });
+        { onConflict: "user_id, id_type" },
+      );
 
-      if (error) throw error;
+      if (dbError) throw dbError;
 
-      // Show success toast
+      // 3. Success
       setShowSuccess(true);
-
-      // Redirect after 2 seconds
       setTimeout(() => {
         router.push("/dashboard");
       }, 2000);
-    } catch (error) {
-      console.error("Verification error:", error);
-      alert("Verification failed. Please try again.");
+    } catch (err: any) {
+      console.error("Verification error:", err);
+      setError(err.message || "Verification failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 py-12 px-4">
-      {/* Smooth Success Toast */}
+    <div className="min-h-screen bg-vendly-background text-vendly-text py-12 px-4">
+      {/* Success Toast */}
       {showSuccess && (
-        <div className="fixed top-6 right-6 bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 z-50 animate-bounce">
+        <div className="fixed top-6 right-6 bg-vendly-success text-white px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 z-50 animate-bounce">
           <svg
             className="w-6 h-6"
             fill="none"
@@ -79,71 +77,61 @@ export default function VerificationPage() {
               d="M5 13l4 4L19 7"
             />
           </svg>
-          <span className="font-bold">
-            ✅ Verification submitted successfully!
-          </span>
+          <span className="font-bold">✅ Verification submitted securely!</span>
         </div>
       )}
 
       <div className="max-w-md mx-auto">
-        {/* Header */}
         <div className="text-center mb-8">
           <Link
             href="/dashboard"
-            className="text-blue-400 hover:underline text-sm inline-flex items-center gap-1"
+            className="text-vendly-accent hover:underline text-sm inline-flex items-center gap-1"
           >
             ← Back to Dashboard
           </Link>
-          <h1 className="text-3xl font-bold text-white mt-4 mb-2">
-            Verify Your Identity
-          </h1>
-          <p className="text-blue-200">Required for secure transactions</p>
+          <h1 className="text-3xl font-bold mt-4 mb-2">Verify Your Identity</h1>
+          <p className="text-vendly-muted">Required for secure transactions</p>
         </div>
 
-        {/* Form */}
         <form
           onSubmit={handleSubmit}
-          className="bg-white/10 backdrop-blur-md rounded-xl p-8 border border-white/20"
+          className="bg-vendly-surface backdrop-blur-md rounded-xl p-8 border border-vendly-border"
         >
-          {/* ID Type Selection */}
+          {error && (
+            <div className="mb-4 p-3 bg-vendly-error/20 border border-vendly-error rounded-lg text-vendly-error text-sm">
+              {error}
+            </div>
+          )}
+
           <div className="mb-6">
-            <label className="block text-white text-sm font-medium mb-3">
+            <label className="block text-vendly-text text-sm font-medium mb-3">
               Select ID Type
             </label>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => setIdType("bvn")}
-                className={`py-3 px-4 rounded-lg border-2 transition-all font-semibold ${
-                  idType === "bvn"
-                    ? "border-blue-500 bg-blue-500/20 text-white"
-                    : "border-white/20 text-blue-200 hover:bg-white/5"
-                }`}
+                className={`py-3 px-4 rounded-lg border-2 transition-all font-semibold ${idType === "bvn" ? "border-vendly-primary bg-vendly-primary/20 text-vendly-text" : "border-vendly-border text-vendly-muted hover:border-vendly-primary/50"}`}
               >
                 BVN
               </button>
               <button
                 type="button"
                 onClick={() => setIdType("nin")}
-                className={`py-3 px-4 rounded-lg border-2 transition-all font-semibold ${
-                  idType === "nin"
-                    ? "border-blue-500 bg-blue-500/20 text-white"
-                    : "border-white/20 text-blue-200 hover:bg-white/5"
-                }`}
+                className={`py-3 px-4 rounded-lg border-2 transition-all font-semibold ${idType === "nin" ? "border-vendly-primary bg-vendly-primary/20 text-vendly-text" : "border-vendly-border text-vendly-muted hover:border-vendly-primary/50"}`}
               >
                 NIN
               </button>
             </div>
-            <p className="text-blue-300 text-xs mt-2">
+            <p className="text-vendly-muted text-xs mt-2">
               {idType === "nin"
                 ? "⚠️ NIN accounts limited to ₦50,000"
                 : "✅ BVN allows unlimited transactions"}
             </p>
           </div>
 
-          {/* ID Number Input */}
           <div className="mb-6">
-            <label className="block text-white text-sm font-medium mb-2">
+            <label className="block text-vendly-text text-sm font-medium mb-2">
               Enter your {idType.toUpperCase()} Number
             </label>
             <input
@@ -152,33 +140,31 @@ export default function VerificationPage() {
               onChange={(e) => setIdNumber(e.target.value.replace(/\D/g, ""))}
               placeholder="11-digit number"
               maxLength={11}
-              className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/20 text-white placeholder-blue-300 focus:outline-none focus:border-blue-500"
+              className="w-full px-4 py-3 rounded-lg bg-vendly-background border border-vendly-border text-vendly-text placeholder-vendly-muted focus:outline-none focus:border-vendly-primary"
               required
             />
           </div>
 
-          {/* Age Confirmation */}
           <div className="mb-6">
             <label className="flex items-start gap-3 cursor-pointer">
               <input
                 type="checkbox"
                 checked={ageConfirmed}
                 onChange={(e) => setAgeConfirmed(e.target.checked)}
-                className="mt-1 w-4 h-4 rounded border-white/20 bg-white/5 text-blue-500"
+                className="mt-1 w-4 h-4 rounded border-vendly-border bg-vendly-background text-vendly-primary focus:ring-vendly-primary"
               />
-              <span className="text-blue-200 text-sm">
+              <span className="text-vendly-muted text-sm">
                 I confirm I am 18+ years old
               </span>
             </label>
           </div>
 
-          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading || !ageConfirmed}
-            className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-cyan-600 transition-all disabled:opacity-50"
+            className="w-full bg-hero-gradient text-white py-3 rounded-lg font-semibold hover:opacity-90 transition-all disabled:opacity-50"
           >
-            {loading ? "Verifying..." : "Submit Verification"}
+            {loading ? "Securing Data..." : "Submit Verification"}
           </button>
         </form>
       </div>

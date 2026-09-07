@@ -12,40 +12,49 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    checkUser();
+    checkUserAndStatus();
   }, []);
 
-  async function checkUser() {
+  async function checkUserAndStatus() {
+    // 1. Get Auth User
     const {
       data: { user },
     } = await supabase.auth.getUser();
-
     if (!user) {
       router.push("/");
-    } else {
-      setUser(user);
-      // Check if user is verified from metadata
-      setIsVerified(user.user_metadata?.is_verified || false);
-      setLoading(false);
+      return;
     }
+    setUser(user);
+
+    // 2. Check Verification Status from the new secure table
+    const { data: verification } = await supabase
+      .from("verifications")
+      .select("status")
+      .eq("user_id", user.id)
+      .in("id_type", ["bvn", "nin"])
+      .eq("status", "verified") // We only care if it's actually verified
+      .single();
+
+    setIsVerified(!!verification);
+    setLoading(false);
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-        <div className="text-white text-xl">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-vendly-background">
+        <div className="text-vendly-text text-xl">Loading Dashboard...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
+    <div className="min-h-screen bg-vendly-background text-vendly-text">
       {/* Header */}
-      <nav className="bg-white/10 backdrop-blur-md border-b border-white/20">
+      <nav className="bg-vendly-surface/50 backdrop-blur-md border-b border-vendly-border">
         <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-white">Vendly</h1>
+          <h1 className="text-2xl font-bold text-vendly-accent">Vendly</h1>
           <div className="flex items-center gap-4">
-            <span className="text-blue-200 text-sm hidden sm:inline">
+            <span className="text-vendly-muted text-sm hidden sm:inline">
               {user?.email}
             </span>
             <button
@@ -53,7 +62,7 @@ export default function DashboardPage() {
                 await supabase.auth.signOut();
                 router.push("/");
               }}
-              className="text-red-400 hover:text-red-300 text-sm font-medium"
+              className="text-vendly-error hover:text-red-300 text-sm font-medium"
             >
               Sign Out
             </button>
@@ -64,78 +73,83 @@ export default function DashboardPage() {
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 py-12">
         <div className="mb-12">
-          <h2 className="text-4xl font-bold text-white mb-2">
-            Welcome back! 👋
-          </h2>
-          <p className="text-blue-200">
+          <h2 className="text-4xl font-bold mb-2">Welcome back! 👋</h2>
+          <p className="text-vendly-muted">
             Manage your transactions and account settings
           </p>
         </div>
 
         {/* Quick Actions */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-all group">
-            <div className="text-3xl mb-3"></div>
-            <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-blue-400 transition-colors">
+          <Link
+            href="/marketplace"
+            className="bg-vendly-surface rounded-xl p-6 border border-vendly-border hover:border-vendly-primary/50 transition-all group"
+          >
+            <div className="text-3xl mb-3">🛒</div>
+            <h3 className="text-xl font-semibold mb-2 group-hover:text-vendly-accent transition-colors">
               Start Buying
             </h3>
-            <p className="text-blue-200 text-sm mb-4">
+            <p className="text-vendly-muted text-sm mb-4">
               Browse verified sellers
             </p>
-            <button className="text-blue-400 hover:text-blue-300">
+            <span className="text-vendly-accent text-sm font-medium">
               Browse Marketplace →
-            </button>
-          </div>
+            </span>
+          </Link>
 
-          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-all group">
+          <Link
+            href="/create-listing"
+            className="bg-vendly-surface rounded-xl p-6 border border-vendly-border hover:border-vendly-primary/50 transition-all group"
+          >
             <div className="text-3xl mb-3">📦</div>
-            <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-blue-400 transition-colors">
+            <h3 className="text-xl font-semibold mb-2 group-hover:text-vendly-accent transition-colors">
               Start Selling
             </h3>
-            <p className="text-blue-200 text-sm mb-4">List your products</p>
-            <button className="text-blue-400 hover:text-blue-300">
+            <p className="text-vendly-muted text-sm mb-4">List your products</p>
+            <span className="text-vendly-accent text-sm font-medium">
               Create Listing →
-            </button>
-          </div>
+            </span>
+          </Link>
 
-          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 hover:bg-white/15 transition-all group">
+          <Link
+            href="/transactions"
+            className="bg-vendly-surface rounded-xl p-6 border border-vendly-border hover:border-vendly-primary/50 transition-all group"
+          >
             <div className="text-3xl mb-3">📊</div>
-            <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-blue-400 transition-colors">
+            <h3 className="text-xl font-semibold mb-2 group-hover:text-vendly-accent transition-colors">
               Transactions
             </h3>
-            <p className="text-blue-200 text-sm mb-4">View your history</p>
-            <button className="text-blue-400 hover:text-blue-300">
+            <p className="text-vendly-muted text-sm mb-4">View your history</p>
+            <span className="text-vendly-accent text-sm font-medium">
               View All →
-            </button>
-          </div>
+            </span>
+          </Link>
         </div>
 
         {/* Verification Status Card */}
         {!isVerified ? (
-          /* Show this if NOT verified */
-          <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 border border-white/20">
+          <div className="bg-vendly-surface rounded-xl p-8 border border-vendly-border">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-semibold text-white mb-2">
+                <h3 className="text-xl font-semibold mb-2">
                   Account Verification
                 </h3>
-                <p className="text-blue-200 text-sm">
+                <p className="text-vendly-muted text-sm">
                   Verify your identity to start transacting securely
                 </p>
               </div>
               <button
                 onClick={() => router.push("/verification")}
-                className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-8 py-3 rounded-lg font-semibold hover:from-blue-600 hover:to-cyan-600 transition-all shadow-lg"
+                className="bg-hero-gradient text-white px-8 py-3 rounded-lg font-semibold hover:opacity-90 transition-all shadow-lg"
               >
                 Verify Now
               </button>
             </div>
           </div>
         ) : (
-          /* Show this if VERIFIED */
-          <div className="bg-green-500/20 backdrop-blur-md rounded-xl p-8 border border-green-500/40">
+          <div className="bg-vendly-success/10 rounded-xl p-8 border border-vendly-success/40">
             <div className="flex items-center gap-4">
-              <div className="flex-shrink-0 w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+              <div className="flex-shrink-0 w-12 h-12 bg-vendly-success rounded-full flex items-center justify-center">
                 <svg
                   className="w-6 h-6 text-white"
                   fill="none"
@@ -151,12 +165,11 @@ export default function DashboardPage() {
                 </svg>
               </div>
               <div>
-                <h3 className="text-xl font-semibold text-white mb-1">
+                <h3 className="text-xl font-semibold mb-1">
                   ✅ Account Verified
                 </h3>
-                <p className="text-green-200 text-sm">
-                  Your {user.user_metadata?.verification_type?.toUpperCase()}{" "}
-                  has been verified. You can now transact freely.
+                <p className="text-vendly-success text-sm">
+                  Your identity is verified. You can transact freely.
                 </p>
               </div>
             </div>
